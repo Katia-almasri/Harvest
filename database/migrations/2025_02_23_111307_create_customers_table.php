@@ -18,10 +18,19 @@ return new class extends Migration
             $table->string('father_name');
             $table->string('phone_number')->nullable();
             $table->string('family_status')->nullable();
-            $table->integer('gender')->nullable();
+            $table->string('gender')->nullable();
             $table->float('longitude')->nullable();
             $table->float('latitude')->nullable();
+
+            $table->string('employment_status')->nullable();
+            $table->string('industry')->nullable();
+            $table->string('main_source_of_fund')->nullable();
+            $table->string('minimum_investment_amount')->nullable();
+
+            $table->softDeletes();
             $table->timestamps();
+            //TODO return the database tables name to singular
+
         });
     }
 

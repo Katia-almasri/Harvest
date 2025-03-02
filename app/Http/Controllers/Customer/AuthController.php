@@ -5,17 +5,22 @@ namespace App\Http\Controllers\Customer;
 use App\Enums\General\RoleType;
 use App\Enums\General\StatusCodeEnum;
 use App\Http\Controllers\General\ApiController;
-use App\Http\Requests\Customer\RegisterCustomerAccountRequest;
+use App\Http\Requests\General\Auth\StoreUserRequest;
 use App\Mail\OTPMail;
 use App\Services\General\OTPService;
-use App\Services\UserService;
+use App\Services\User\UserService;
 use Illuminate\Support\Facades\Mail;
 
 class AuthController extends ApiController
 {
     public function __construct(private OTPService $otpService, private UserService $userService){}
 
-    public function register(RegisterCustomerAccountRequest $request){
+    /**
+     * Register New Customer
+     * @param StoreUserRequest $request
+     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Foundation\Application|\Illuminate\Http\Response
+     */
+    public function register(StoreUserRequest $request){
         try {
 
             $data = $request->validated();

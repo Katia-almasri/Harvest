@@ -9,6 +9,7 @@ enum Industry{
     const ENGINEERING='engineering';
     const TRADING='trading';
     const REAL_ESTATE='real estate';
+    const OTHER='other';
 
     public static function  getAll(): array
     {
@@ -21,6 +22,7 @@ enum Industry{
             Industry::ENGINEERING,
             Industry::TRADING,
             Industry::REAL_ESTATE,
+            Industry::OTHER,
         ];
     }
 }

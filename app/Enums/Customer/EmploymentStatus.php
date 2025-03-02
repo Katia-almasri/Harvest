@@ -6,6 +6,7 @@ enum EmploymentStatus{
     const FREELANCER='freelancer';
     const STUDENT='student';
     const RETIRED='retired';
+    const OTHER='other';
 
     public static function  getAll(): array
     {
@@ -15,6 +16,7 @@ enum EmploymentStatus{
             EmploymentStatus::RETIRED,
             EmploymentStatus::FREELANCER,
             EmploymentStatus::STUDENT,
+            EmploymentStatus::OTHER,
         ];
     }
 }

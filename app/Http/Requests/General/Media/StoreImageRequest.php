@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\General\Media;
 
+use App\Enums\Media\MediaCollectionType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreImageRequest extends FormRequest
 {
@@ -23,6 +25,7 @@ class StoreImageRequest extends FormRequest
     {
         return [
             'image' =>  ['required', 'file', 'mimes:jpg,jpeg,png,gif,svg'],
+            'media_collection_type'=> ['string', Rule::in(MediaCollectionType::CUSTOMER_PASSPORT, MediaCollectionType::RESIDENTIAL_CARD)]
         ];
     }
 }

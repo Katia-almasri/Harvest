@@ -2,21 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\Media\MediaCollectionType;
-use App\Enums\Media\MediaType;
 use App\Enums\General\StatusCodeEnum;
-use App\Helpers\MediaHelper;
 use App\Http\Controllers\General\ApiController;
 use App\Http\Requests\Admin\UpdateRequest;
-use App\Http\Requests\General\Media\StoreImageRequest;
 use App\Http\Requests\General\Profile\ResetEmailRequest;
 use App\Http\Requests\General\Profile\UpdateEmailRequest;
 use App\Http\Requests\General\Profile\VerifyEmailRequest;
-use App\Http\Resources\General\MediaResource;
 use App\Http\Resources\General\UserResource;
 use App\Mail\OTPMail;
 use App\Services\General\OTPService;
-use App\Services\UserService;
+use App\Services\User\UserService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -46,19 +41,6 @@ class ProfileController extends ApiController
         return $this->apiResponse(new UserResource($admin), StatusCodeEnum::STATUS_OK, __('messages.successfully_updated'));
     }
 
-    /**
-     * Upload Image
-     * @param StoreImageRequest $request
-     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Foundation\Application|\Illuminate\Http\Response
-     */
-    public function uploadImage(StoreImageRequest $request){
-        $admin = auth()->user();
-        MediaHelper::deleteMedia($admin, MediaCollectionType::PROFILE_IMAGE);
-        $image = MediaHelper::addMediaFromRequest($admin, MediaType::IMAGE, MediaCollectionType::PROFILE_IMAGE);
-        //2. add the new image
-        return $this->apiResponse(new MediaResource($image), StatusCodeEnum::STATUS_OK, __('messages.successfully_image_updated'));
-
-    }
 
     /**
      * Update Email

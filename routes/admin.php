@@ -12,9 +12,6 @@ Route::middleware('auth:sanctum')->group(function (){
     Route::get("me/profile", [ProfileController::class, 'show'])->name('admin.profile.show');
     Route::post("me/profile", [ProfileController::class, 'update'])->name('admin.profile.update');
 
-    // upload image
-    Route::post("me/profile/upload-image", [ProfileController::class, 'uploadImage'])->name('admin.image.upload');
-
     // update email
     Route::post('me/profile/update-email', [ProfileController::class, 'updateEmail'])->name('admin.email.update');
     Route::post('me/profile/verify-email', [ProfileController::class, 'verifyEmail'])->name('admin.email.verify');

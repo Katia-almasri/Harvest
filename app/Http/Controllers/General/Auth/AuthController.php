@@ -13,7 +13,7 @@ use App\Http\Resources\General\UserResource;
 use App\Mail\OTPMail;
 use App\Models\User;
 use App\Services\General\OTPService;
-use App\Services\UserService;
+use App\Services\User\UserService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;

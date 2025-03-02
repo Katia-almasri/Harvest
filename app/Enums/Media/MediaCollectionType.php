@@ -5,6 +5,8 @@ enum MediaCollectionType
 {
     const PROFILE_IMAGE = 'profile_image';
     const REAL_ESTATE_IMAGE = 'real_estate_image';
+    const CUSTOMER_PASSPORT = 'customer_passport';
+    const RESIDENTIAL_CARD = 'residential_card';
     const REAL_ESTATE_DOCUMENT = 'real_estate_document';
 
     public static function  getAll(): array
@@ -12,7 +14,9 @@ enum MediaCollectionType
         return [
             MediaCollectionType::PROFILE_IMAGE,
             MediaCollectionType::REAL_ESTATE_IMAGE,
-            MediaCollectionType::REAL_ESTATE_DOCUMENT
+            MediaCollectionType::CUSTOMER_PASSPORT,
+            MediaCollectionType::REAL_ESTATE_DOCUMENT,
+            MediaCollectionType::RESIDENTIAL_CARD,
         ];
     }
 }

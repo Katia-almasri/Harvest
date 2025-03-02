@@ -9,6 +9,7 @@ enum MainFundType{
     const INHERITED_WEALTH='inherited_wealth';
     const SCHOLARSHIPS='scholarships';
     const FAMILY_AID='real family aid';
+    const OTHER='other';
 
     public static function  getAll(): array
     {
@@ -20,7 +21,8 @@ enum MainFundType{
             MainFundType::LOANS,
             MainFundType::INHERITED_WEALTH,
             MainFundType::SCHOLARSHIPS,
-            MainFundType::FAMILY_AID
+            MainFundType::FAMILY_AID,
+            MainFundType::OTHER,
         ];
     }
 }

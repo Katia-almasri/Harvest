@@ -36,7 +36,6 @@ class RealEstateService{
             $realEstate->update($data);
             return $realEstate->refresh();
         }catch (QueryException $e){
-            DB::rollBack();
             return null;
         }
     }
