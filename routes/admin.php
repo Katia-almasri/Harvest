@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\ProfileController;
-use App\Http\Controllers\RealEstate\RealEstateController;
-use App\Models\RealEstate\RealEstate;
+use App\Http\Controllers\Admin\RealEstate\RealEstateController;
+use App\Http\Controllers\Admin\RealEstate\SpvController;
+use App\Http\Middleware\Admin\CustomerManagement;
 use Illuminate\Support\Facades\Route;
 
 
@@ -33,9 +35,16 @@ Route::middleware('auth:sanctum')->group(function (){
         Route::patch('/{realEstate}', [RealEstateController::class, 'update'])->name('admin.real-estate.update');
         Route::post('/change-status/{realEstate}', [RealEstateController::class, 'changeStatus'])->name('admin.real-estate.status');
         Route::post('/delete/{realEstate}', [RealEstateController::class, 'destroy'])->name('admin.real-estate.delete');
-
     });
 
+    Route::prefix('customers')->middleware(CustomerManagement::class)->group(function (){
+        Route::get('/', [CustomerController::class, 'index'])->name('admin.customer.index');
+    });
+
+    Route::group(['prefix' => "spv"], function () {
+        Route::post('/real-estates/{realEstate}', [SpvController::class, 'store'])->name('admin.spv.store');
+        Route::get('/{spv}', [SpvController::class, 'show'])->name('admin.spv.show');
+    });
 
 
 });

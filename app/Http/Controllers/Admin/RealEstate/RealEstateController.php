@@ -1,12 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\RealEstate;
+namespace App\Http\Controllers\Admin\RealEstate;
 
 use App\Enums\General\StatusCodeEnum;
 use App\Enums\Media\MediaCollectionType;
 use App\Enums\RealEstate\RealEstateStatus;
 use App\Exceptions\General\ServerException;
-use App\Helpers\MediaHelper;
 use App\Http\Controllers\General\ApiController;
 use App\Http\Requests\RealEstate\StoreRealEstateRequest;
 use App\Http\Requests\RealEstate\UpdateRealEstateRequest;

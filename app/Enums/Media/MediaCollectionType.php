@@ -8,6 +8,7 @@ enum MediaCollectionType
     const CUSTOMER_PASSPORT = 'customer_passport';
     const RESIDENTIAL_CARD = 'residential_card';
     const REAL_ESTATE_DOCUMENT = 'real_estate_document';
+    const SPV_LEGAL_DOCUMENT = 'spv_legal_document';
 
     public static function  getAll(): array
     {
@@ -17,6 +18,7 @@ enum MediaCollectionType
             MediaCollectionType::CUSTOMER_PASSPORT,
             MediaCollectionType::REAL_ESTATE_DOCUMENT,
             MediaCollectionType::RESIDENTIAL_CARD,
+            MediaCollectionType::SPV_LEGAL_DOCUMENT,
         ];
     }
 }

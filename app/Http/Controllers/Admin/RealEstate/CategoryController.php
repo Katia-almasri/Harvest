@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\RealEstate;
+namespace App\Http\Controllers\Admin\RealEstate;
 
 use App\Http\Controllers\General\ApiController;
 

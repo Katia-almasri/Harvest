@@ -3,7 +3,9 @@ namespace App\Services\Customer;
 use App\Models\Customer;
 
 class CustomerService{
-    public function index(){}
+    public function index(){
+        return Customer::query();
+    }
     public function store($data){
         $customer = new Customer();
         $customer->fill($data);

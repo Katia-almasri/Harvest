@@ -3,6 +3,7 @@
 namespace App\Models\RealEstate;
 
 use App\Enums\Media\MediaCollectionType;
+use App\Models\BusinessLogic\SPV;
 use App\Models\Common\City;
 use App\Models\User;
 use App\Observers\RealEstateObserver;
@@ -40,6 +41,10 @@ class RealEstate extends Model implements HasMedia
 
     public function medias(){
         return $this->morphMany(Media::class, 'model');
+    }
+
+    public function spv(){
+        return $this->belongsTo(SPV::class, 'spv_id');
     }
 
 }
