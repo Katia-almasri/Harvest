@@ -19,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         then: function () {
             Route::middleware('api')->namespace('Admin')->prefix('admin')->name('admin')->group(base_path('routes/admin.php'));
             Route::middleware('api')->namespace('Customer')->prefix('customer')->name('customer')->group(base_path('routes/customer.php'));
+
+            // for block chain tokenization interactions
+            Route::middleware('api')->namespace('Admin')->prefix('admin/tokenization')->name('tokenization.admin')->group(base_path('routes/BlockChain/admin.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware) {

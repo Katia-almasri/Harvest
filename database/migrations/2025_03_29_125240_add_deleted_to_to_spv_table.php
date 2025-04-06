@@ -11,13 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('spv', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('registration_number')->unique();
-            $table->foreignId('real_estate_id')->constrained('real_estates');
-
-            $table->timestamps();
+        Schema::table('spv', function (Blueprint $table) {
+            $table->softDeletes();
         });
     }
 
@@ -26,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('spv');
+        Schema::table('spv', function (Blueprint $table) {
+            //
+        });
     }
 };

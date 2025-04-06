@@ -42,8 +42,9 @@ Route::middleware('auth:sanctum')->group(function (){
     });
 
     Route::group(['prefix' => "spv"], function () {
-        Route::post('/real-estates/{realEstate}', [SpvController::class, 'store'])->name('admin.spv.store');
-        Route::get('/{spv}', [SpvController::class, 'show'])->name('admin.spv.show');
+        Route::post('/real-estates/{realEstate}', [SpvController::class, 'store'])->name('.spv.store');
+        Route::get('/{spv}', [SpvController::class, 'show'])->name('.spv.show');
+        Route::delete('/{spv}', [SpvController::class, 'destroy'])->name('.spv.destroy');
     });
 
 

@@ -22,7 +22,10 @@ class SPV extends Model implements HasMedia
         return $this->BelongsTo(RealEstate::class);
     }
 
-    public function legalDocument(){
-        return $this->morphOne(Media::class, 'model')->where('collection_name', MediaCollectionType::SPV_LEGAL_DOCUMENT);
+    public function legalDocument()
+    {
+        return $this->morphOne(Media::class, 'model')
+            ->where('collection_name', MediaCollectionType::SPV_LEGAL_DOCUMENT);
     }
+
 }

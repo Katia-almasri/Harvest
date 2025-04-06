@@ -39,6 +39,8 @@ class RealEstateDetailsResource extends JsonResource
             'latitude'=>$this->latitude,
             'images'=> MediaResource::collection($this->images()->get()),
             'documents'=> MediaResource::collection($this->documents()->get()),
+            'has_spv'=> $this->spv()?true:false,
+
         ];
     }
 }

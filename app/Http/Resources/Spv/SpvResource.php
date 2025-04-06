@@ -21,7 +21,6 @@ class SpvResource extends JsonResource
             'name'=>$this->name,
             'registration_number'=>$this->registration_number,
             'legal_document'=>new MediaResource($this->legalDocument),
-            'real_estate'=>new RealEstateResource($this->realEstate)
         ];
     }
 }

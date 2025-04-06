@@ -22,13 +22,15 @@ class MediaService implements MediaInterface{
         // TODO: Implement update() method.
     }
 
-    public function delete($model, $media)
+    public function delete($model, $media=null)
     {
-        // TODO: Implement delete() method.
+        $legalDocument = $this->show($model);
+        $legalDocument->delete();
+        return $legalDocument;
     }
 
-    public function show($model, Media $media)
+    public function show($model, Media $media=null)
     {
-        // TODO: Implement show() method.
+        return $model->legalDocument();
     }
 }
