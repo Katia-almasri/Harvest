@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             // for block chain tokenization interactions
             Route::middleware('api')->namespace('Admin')->prefix('admin/tokenization')->name('tokenization.admin')->group(base_path('routes/BlockChain/admin.php'));
+            Route::middleware('api')->namespace('Customer')->prefix('customer/tokenization')->name('tokenization.customer')->group(base_path('routes/BlockChain/customer.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware) {

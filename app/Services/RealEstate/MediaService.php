@@ -1,7 +1,7 @@
 <?php
 namespace App\Services\RealEstate;
 use App\Enums\Media\MediaCollectionType;
-use App\General\MediaInterface;
+use App\General\Interfaces\MediaInterface;
 use App\Helpers\MediaHelper;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 

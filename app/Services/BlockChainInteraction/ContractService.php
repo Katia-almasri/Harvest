@@ -1,36 +1,38 @@
 <?php
 namespace App\Services\BlockChainInteraction;
-use App\Enums\Media\MediaCollectionType;
-use App\General\MediaInterface;
-use App\Helpers\MediaHelper;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use App\Models\BusinessLogic\SPV;
 use Web3\Contract;
 use Web3\Providers\HttpProvider;
 use Web3\RequestManagers\HttpRequestManager;
 use Web3\Web3;
 
-class BlockChainService {
+class ContractService {
     protected Web3 $web3;
     protected Contract $contract;
+    protected string $abi; // represents the web3 platform application ID
 
     public function __construct()
     {
         $requestManager = new HttpRequestManager(env('INFURA_ENDPOINT'), 20); // 20 seconds timeout
         $provider = new HttpProvider($requestManager);
-
         $this->web3 = new Web3($provider);
+        $this->abi = file_get_contents(resource_path('contracts/RealEstateToken.json'));
 
     }
 
 
-    public function getContract(string $abi, string $contractAddress): Contract
+    public function getContractBySpv(SPV $spv): Contract
     {
-        $contract = new Contract($this->web3->getProvider(), $abi);
-        $contract->at($contractAddress);
+        if($spv->contract_address==null)
+            throw new \Exception("SPV contract address is not configured");
+
+        $contract = new Contract($this->web3->getProvider(), $this->abi);
+        $contract->at($spv->contract_address);
+        $this->contract = $contract;
         return $contract;
     }
 
-    public function callMethod(string $method, array $params = []): mixed
+    public function callMethod(string $method, $params): mixed
     {
         $result = null;
         $this->contract->call($method, $params, function ($err, $res) use (&$result) {

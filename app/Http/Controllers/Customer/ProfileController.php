@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Customer;
 use App\Enums\General\StatusCodeEnum;
 use App\Enums\Media\MediaCollectionType;
 use App\Enums\Media\MediaType;
-use App\Helpers\MediaHelper;
 use App\Http\Controllers\General\ApiController;
 use App\Http\Requests\Customer\CompleteCustomerProfileRequest;
 use App\Http\Requests\Customer\RegisterCustomerAccountRequest;
@@ -13,12 +12,10 @@ use App\Http\Requests\Customer\UpdateCustomerRequest;
 use App\Http\Requests\General\Media\StoreImageRequest;
 use App\Http\Resources\Customer\CustomerResource;
 use App\Http\Resources\General\MediaResource;
-use App\Models\Customer;
+use App\Models\Customer\Customer;
 use App\Services\Customer\CustomerService;
 use App\Services\Customer\MediaService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Mockery\Exception;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class ProfileController extends ApiController

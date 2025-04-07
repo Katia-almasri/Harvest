@@ -1,6 +1,6 @@
 <?php
 
-namespace App\General;
+namespace App\General\Interfaces;
 
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 

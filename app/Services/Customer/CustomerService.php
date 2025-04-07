@@ -1,6 +1,6 @@
 <?php
 namespace App\Services\Customer;
-use App\Models\Customer;
+use App\Models\Customer\Customer;
 
 class CustomerService{
     public function index(){
@@ -28,4 +28,5 @@ class CustomerService{
 
     //TODO try to change the type to generic for all services
     public function delete(){}
+
 }

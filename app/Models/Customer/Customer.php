@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Customer;
 
 use App\Enums\Media\MediaCollectionType;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -27,5 +28,9 @@ class Customer extends Model implements HasMedia
 
     public function residentialCardImage(){
         return $this->hasOne(Media::class, 'model_id', 'id')->where('collection_name', MediaCollectionType::RESIDENTIAL_CARD)->latest()->first();
+    }
+
+    public function customerWallet(){
+        return $this->hasOne(CustomerWallet::class, 'customer_id', 'id');
     }
 }

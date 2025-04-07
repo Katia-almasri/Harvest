@@ -43,10 +43,23 @@ class AppServiceProvider extends ServiceProvider
             });
 
         // tokenization part
+        //1. Admin
         Scramble::registerApi('admin.tokenization', ['api_path' => 'admin/tokenization/'])
             ->expose(
                 ui: '/docs/admin/tokenization',
                 document: '/docs/admin/tokenization/openapi.json',
+            )
+            ->afterOpenApiGenerated(function (OpenApi $openApi) {
+                $openApi->secure(
+                    SecurityScheme::http('bearer')
+                );
+            });
+
+        //2. Customer
+        Scramble::registerApi('customer.tokenization', ['api_path' => 'customer/tokenization/'])
+            ->expose(
+                ui: '/docs/customer/tokenization',
+                document: '/docs/customer/tokenization/openapi.json',
             )
             ->afterOpenApiGenerated(function (OpenApi $openApi) {
                 $openApi->secure(
