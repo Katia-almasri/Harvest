@@ -10,12 +10,18 @@ class Payment extends Model
 {
     use HasFactory;
 
-    protected $fillable = ["user_id" , "amount" ,
-        "currency_id" , "payment_method" , "status",
-        "imageable_id" , "imageable_type"];
+    protected $fillable = [
+        "user_id" , "amount" ,
+        "currency" , "payment_method" , "status",
+        "payable_id" , "payable_type"];
 
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class);
+    }
+
+    public function payable(): BelongsTo
+    {
+        return $this->morphTo();
     }
 }

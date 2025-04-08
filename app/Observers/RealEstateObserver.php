@@ -14,4 +14,10 @@ class RealEstateObserver
             $media->delete();
         }
     }
+
+    public function updated(RealEstate $realEstate){
+        if($realEstate->shares_sold== $realEstate->total_shares){
+            // TODO should make the share certificate and distribute the spv on the subscribed customers
+        }
+    }
 }

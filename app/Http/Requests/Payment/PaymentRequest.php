@@ -26,7 +26,6 @@ class PaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'amount' => 'required|numeric|min:1',
             'tokens'=>'required|numeric|min:1',
             'currency' => ['required', 'string', Rule::in(CurrencyType::getAll())],
             'payment_method' => ['required', 'string', Rule::in(PaymentMethod::getAll())],

@@ -1,5 +1,8 @@
 <?php
 
+use App\Enums\General\Payment\Payable;
+use App\Enums\General\Payment\PaymentMethod;
+use App\Enums\General\Payment\PaymentStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,12 +16,17 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->integer("payment_id");
+            $table->integer("user_id");
 
-            $table->string("charge_id");
-            $table->longText("payment_url");
+            $table->double("amount")->default(0);
+            $table->string("currency");
 
+            $table->string('payment_method')->default(PaymentMethod::STRIPE);
+            $table->string("status")->default(PaymentStatus::UNPAID);
+
+            $table->morphs('payable');
             $table->timestamps();
+
         });
     }
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Customer\PaymentController;
 use App\Http\Controllers\General\Auth\AuthController;
 use App\Http\Controllers\General\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -22,5 +23,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('change-password', [AuthController::class, 'changePassword']);
 
 
+
+
+
 });
+Route::post('/stripe/webhook', [PaymentController::class, 'handleWebhook']);
 
