@@ -4,6 +4,7 @@ namespace App\Models\BusinessLogic;
 
 use App\Models\Customer\Customer;
 use App\Models\RealEstate\RealEstate;
+use App\Models\Scopes\Customer\InvestmentScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Investment extends Model
@@ -16,6 +17,12 @@ class Investment extends Model
     }
 
     public function realEstate(){
-        return $this->hasMany(RealEstate::class);
+        return $this->belongsTo(RealEstate::class);
+    }
+
+    ############### Apply the Global Scope ######################
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new InvestmentScope());
     }
 }

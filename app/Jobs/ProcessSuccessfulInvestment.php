@@ -12,6 +12,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class ProcessSuccessfulInvestment implements ShouldQueue
 {
@@ -20,12 +21,14 @@ class ProcessSuccessfulInvestment implements ShouldQueue
     /**
      * Create a new job instance.
      */
+    private $paymentIntentId;
+    private $realEstateId;
     public function __construct(
-        private $paymentIntentId,
-        private Payment $payment,
-        private Investment $investment,
-        private RealEstate $realEstate)
+        $paymentIntentId, $realEstateId
+        )
     {
+        $this->paymentIntentId = $paymentIntentId;
+        $this->realEstateId = $realEstateId;
     }
 
     /**
@@ -34,17 +37,22 @@ class ProcessSuccessfulInvestment implements ShouldQueue
     public function handle(): void
     {
         //1. update the payment status
-        $this->payment->status = PAymentStatus::SUCCEEDED;
-        $this->payment->save();
+        $payment = Payment::where('payment_intent_id', $this->paymentIntentId)->first();
+        $payment->status = PAymentStatus::SUCCEEDED;
+        $payment->save();
 
         //2. update the investment status
-        $this->investment->status = InvestmentStatus::SUCCEEDED;
-        $this->investment->save();
+        $investment = Investment::where('payment_id', $payment->id)->first();
+        $investment->status = InvestmentStatus::SUCCEEDED;
+        $investment->save();
 
         //3. update the real estate requirements
-        $this->realEstate->update([
-            'shares_sold'=> $this->investment->total_tokens,
+        $realEstate = RealEstate::find($this->realEstateId);
+        $realEstate->update([
+            'shares_sold'=> $investment->total_tokens,
         ]);
+
+
 
 
         //TODO send email to the customer and to the Admin

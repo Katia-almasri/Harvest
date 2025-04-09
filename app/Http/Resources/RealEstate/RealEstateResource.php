@@ -21,6 +21,7 @@ class RealEstateResource extends JsonResource
             'status'=>$this->status,
             'category'=>$this->category,
             'purchase_price'=>$this->purchase_price,
+            'unique_number'=> $this->unique_number,
             'images'=> MediaResource::collection($this->images()->get()),
         ];
     }

@@ -18,11 +18,15 @@ class PaymentService{
                 break;
         }
 
-        return $payment->save();
+        $payment->save();
+        return $payment;
     }
 
     public function show(){}
-    public function update(){}
+    public function update(array $data, Payment $payment){
+        $payment->update($data);
+        return $payment;
+    }
     public function delete(){}
 
     public function calculateTokensPrice($tokens, RealEstate $realEstate){

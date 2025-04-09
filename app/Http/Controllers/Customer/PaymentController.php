@@ -59,7 +59,8 @@ class PaymentController extends ApiController
                 'confirm' => true,
                 'metadata' => [
                     'investment_id' => $investment->id,
-                    'user_id' => auth()->id()
+                    'user_id' => auth()->id(),
+                    'real_estate_id'=> $realEstate->id,
                 ]
             ];
 
@@ -83,7 +84,13 @@ class PaymentController extends ApiController
                 'payment_intent_id' => $payment->id,
                 'payable_id' => $realEstate->id
             ];
-            $this->paymentService->create($data);
+
+            // store a copy the payment in the central DB
+            $localPayment = $this->paymentService->create($data);
+            //4.1  link the investment with payment
+            $investment = $this->investmentService->update(['payment_id'=>$localPayment->id], $investment);
+            //4.2 link the payment with the payment intent
+            $this->paymentService->update(['payment_intent_id', $payment->id], $localPayment);
 
             //5. finishing up the paymentIntent and end it back to the front
             if ($payment->status === PaymentStatus::SUCCEEDED) {
@@ -112,14 +119,16 @@ class PaymentController extends ApiController
 
         try {
             $event = Webhook::constructEvent($payload, $sig_header, $secret);
-
-            // Example: handle successful payment
+            $paymentIntent = $event->data->object;
+            $realEstateId = $paymentIntent->metadata->real_estate_id;
+            // handle successful payment
             if ($event->type === PaymentStatus::PAYMENT_INTENT_SUCCEEDED) {
                 $paymentIntent = $event->data->object;
-                Log::info('💰 Payment received!', ['id' => $paymentIntent->id]);
-
                 // the rest of logic here using the job
-                ProcessSuccessfulInvestment::dispatch($event, $request->all());
+                ProcessSuccessfulInvestment::dispatch(
+                    $paymentIntent->id,
+                    $realEstateId
+                );
             }
 
             return response()->json(['status' => 'success']);

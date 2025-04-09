@@ -10,10 +10,7 @@ class Payment extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        "user_id" , "amount" ,
-        "currency" , "payment_method" , "status",
-        "payable_id" , "payable_type"];
+    protected $guarded = ['id'];
 
     public function currency(): BelongsTo
     {

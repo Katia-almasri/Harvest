@@ -16,6 +16,7 @@
         "spatie/laravel-medialibrary": "^11.12",
         "spatie/laravel-permission": "^6.13",
         "stripe/stripe-php": "^17.1",
+        "web3p/ethereum-tx": "^0.4.3",
         "web3p/web3.php": "^0.1.6"
     },
     "require-dev": {

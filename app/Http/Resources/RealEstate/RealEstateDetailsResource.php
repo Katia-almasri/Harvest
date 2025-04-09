@@ -18,6 +18,7 @@ class RealEstateDetailsResource extends JsonResource
     {
         return [
             'id'=>$this->id,
+            'unique_number'=> $this->unique_number,
             'name'=>$this->name,
             'description'=>$this->description??"",
             'area'=>$this->area,
