@@ -11,6 +11,7 @@ Route::middleware('auth:sanctum')->group(function (){
 
     // pay tokens
     Route::post('real-estates/tokens/buy/{realEstate}',[PaymentController::class,'pay'])->name('customer.real-estates.tokens.buy');
+    Route::post('real-estates/tokens/mint-tokens/{realEstate}', [ContractController::class,'mintTokens'])->name('customer.real-estates.tokens.mint-tokens');
 
     // investments
     Route::prefix('investments')->group(function (){
