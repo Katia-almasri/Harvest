@@ -1,7 +1,7 @@
 <?php
 namespace App\Services\Payment;
 use App\Enums\General\CurrencyType;
-use App\Enums\General\Payment\PaymentMethod;
+use App\Enums\Payment\PaymentMethod;
 use App\Models\Currency;
 
 class CurrencyService{

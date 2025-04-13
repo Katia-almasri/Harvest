@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Customer\BlockChain;
 
+use App\Enums\Contract\NonceStatus;
 use App\Enums\General\StatusCodeEnum;
 use App\Http\Controllers\General\ApiController;
 use App\Http\Requests\Tokens\PostTokensRequest;
+use App\Http\Resources\RealEstate\RealEstateResource;
 use App\Models\BusinessLogic\SPV;
 use App\Models\Customer\Customer;
 use App\Models\RealEstate\RealEstate;
@@ -18,7 +20,8 @@ use Web3p\EthereumTx\Transaction;
 
 class ContractController extends ApiController
 {
-    public function __construct(private readonly ContractService $contractService)
+    public function __construct(private readonly ContractService $contractService,
+    private readonly CustomerService $customerService)
     {
     }
 
@@ -40,50 +43,46 @@ class ContractController extends ApiController
 
     }
 
-    public function mintTokens(PostTokensRequest $request, RealEstate $realEstate){
-        $toAddress = "0x23678678b7665a96a14dd15798db0e776d140b7b";
-        $fromAddress = "0x23678678b7665a96a14dd15798db0e776d140b7a";
-        $amount = bcmul($request->amount, bcpow('10', '18'));
-        $privateKey = env('PRIVATE_KEY');
-        $contract = $this->contractService->getContractBySpv($realEstate->spv);
+    public function mintTokens(PostTokensRequest $request, RealEstate $realEstate)
+    {
+        try {
 
-        $result = null;
-        $data = '0x'.$contract->getData('transfer', $toAddress, $amount); // Amount in smallest unit (18 decimals for ERC20)
-        $nonce = null;
+            $customer = $this->customerService->showByUser(auth()->user());
+            // the customer wallet
+            $toAddress = $customer->customerWallet->wallet_address;
+            // the related contract address spv
+            $spv = $realEstate->spv;
+            $fromAddress = $spv->wallet_address;
+            $contractAddress = $spv->contract_address;
 
-        $this->contractService->getWeb3()->eth->getTransactionCount($fromAddress, 'pending', function ($err, $nonce) use (&$transactionCount) {
-            if ($err !== null) {
-                throw new \Exception('Nonce error: ' . $err->getMessage());
-            }
-            $transactionCount = $nonce->toString();
-        });
+            $transactionHash = null;
+            $transactionUrl = null;
+            $this->contractService->getTransactionCount($fromAddress, $toAddress, $contractAddress, NonceStatus::Pending, $request->amount, $realEstate, function ($data, $err) use(&$transactionHash, &$transactionUrl){
+                if ($err) {
+                    // Handle the error
+                    Log::error("Transaction failed: " . $err->getMessage());
+                } else {
+                    // Success!
+                    $transactionHash = $data['transaction_hash'];
+                    $transactionUrl = $data['transaction_url'];
+                }
+            });
 
-        // Build the transaction
-        $txParams = [
-            'nonce' => Utils::toHex($transactionCount, true),
-            'from' => $fromAddress,
-            'to' => '0x167dB1A8085Ed49Af6E66ac231Bfc5aB9df6BC83',
-            'gas' => Utils::toHex(60000, true),
-            'gasPrice' => Utils::toHex(Utils::toWei('7', 'gwei'), true),
-            'value' => '0x0',
-            'chainId' => 11155111, // Sepolia chain ID
-            'data' => $data,
-        ];
-            // Step 3: Sign and send the transaction
-        $transaction = new Transaction($txParams);
-        $signedTx = '0x' . $transaction->sign($privateKey);
+            $returnedResource = [
+                'transaction_hash'=> $transactionHash,
+                'transaction_path' => $transactionUrl,
+                'real_estate'=> new RealEstateResource($realEstate),
+                'tokens'=> $request->amount,
+                'wallet_address' => $fromAddress,
+                'contract_address' => $contractAddress,
+            ];
 
-// Send raw transaction
-        $this->contractService->getWeb3()->eth->sendRawTransaction($signedTx, function ($err, $txHash) {
-            if ($err !== null) {
-                echo "❌ Error sending: " . $err->getMessage() . PHP_EOL;
-            } else {
-                echo "✅ Sent! Tx Hash: " . $txHash . PHP_EOL;
-                echo "🔍 Track: https://sepolia.etherscan.io/tx/" . $txHash . PHP_EOL;
-            }
-        });
+            return $this->apiResponse($returnedResource, StatusCodeEnum::STATUS_OK, __("messages.success"));
+        }catch (\Exception $exception){
+            Log::error($exception->getMessage());
+            return $this->apiResponse(null, StatusCodeEnum::INTERNAL_SERVER_ERROR, __($exception->getMessage()));
+        }
     }
-
 
 
 }

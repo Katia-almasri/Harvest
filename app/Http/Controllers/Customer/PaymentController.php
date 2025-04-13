@@ -3,26 +3,22 @@
 namespace App\Http\Controllers\Customer;
 
 
-use App\Enums\General\CurrencyType;
 use App\Enums\General\InvestmentStatus;
-use App\Enums\General\Payment\Payable;
-use App\Enums\General\Payment\PaymentMethod;
-use App\Enums\General\Payment\PaymentStatus;
 use App\Enums\General\StatusCodeEnum;
+use App\Enums\Payment\Payable;
+use App\Enums\Payment\PaymentMethod;
+use App\Enums\Payment\PaymentStatus;
 use App\General\Factories\PaymentFactory;
 use App\Http\Controllers\General\ApiController;
 use App\Http\Requests\Payment\PaymentRequest;
 use App\Jobs\ProcessSuccessfulInvestment;
-use App\Models\Currency;
 use App\Models\Customer\Customer;
-use App\Models\Payment;
 use App\Models\RealEstate\RealEstate;
 use App\Services\Investment\InvestmentService;
 use App\Services\Payment\CurrencyService;
 use App\Services\Payment\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\Webhook;
 

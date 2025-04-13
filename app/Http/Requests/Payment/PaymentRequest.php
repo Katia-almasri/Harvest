@@ -3,8 +3,8 @@
 namespace App\Http\Requests\Payment;
 
 use App\Enums\General\CurrencyType;
-use App\Enums\General\Payment\PaymentMethod;
-use App\Enums\General\Payment\PaymentMethodType;
+use App\Enums\Payment\PaymentMethod;
+use App\Enums\Payment\PaymentMethodType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

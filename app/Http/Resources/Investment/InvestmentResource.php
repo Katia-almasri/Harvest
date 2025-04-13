@@ -28,12 +28,20 @@ class InvestmentResource extends JsonResource
             'is_minted'=>(boolean)$this->is_minted,
             'customer_wallet'=> $customerWallet?$customerWallet->wallet_address:null,
             'created_at' => Carbon::parse($this->created_at)->toDateTimeString(),
+
+            // boolean variable detects if the customer has digital wallet in his payment setting or not
+            'has_digital_wallet'=> $this->hasDigitalWallet(),
         ];
     }
 
     public function customerHasWallet(){
         $customer = Customer::where('user_id', auth()->user()->id)->first();
         return CustomerWallet::where('customer_id', $customer?->id)->first();
+    }
 
+    public function hasDigitalWallet(){
+        $customer = Customer::where('user_id', auth()->user->id)->first();
+        return true;
+        //TODO if the customer`s payment setting has digit wallet
     }
 }

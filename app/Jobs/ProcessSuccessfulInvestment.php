@@ -3,16 +3,15 @@
 namespace App\Jobs;
 
 use App\Enums\General\InvestmentStatus;
-use App\Enums\General\Payment\PaymentStatus;
+use App\Enums\Payment\PaymentStatus;
 use App\Models\BusinessLogic\Investment;
 use App\Models\Payment;
 use App\Models\RealEstate\RealEstate;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
 
 class ProcessSuccessfulInvestment implements ShouldQueue
 {

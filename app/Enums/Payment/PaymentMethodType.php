@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Enums\General\Payment;
+namespace App\Enums\Payment;
 
 /**
  * This method types lists the available types we can pay for a specific payment method i.e: Strip

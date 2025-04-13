@@ -2,7 +2,7 @@
 namespace App\Services\Payment;
 
 
-use App\Enums\General\Payment\Payable;
+use App\Enums\Payment\Payable;
 use App\Models\Payment;
 use App\Models\RealEstate\RealEstate;
 
