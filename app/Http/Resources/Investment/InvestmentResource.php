@@ -4,7 +4,7 @@ namespace App\Http\Resources\Investment;
 
 use App\Http\Resources\RealEstate\RealEstateResource;
 use App\Models\Customer\Customer;
-use App\Models\Customer\CustomerWallet;
+use App\Models\Customer\Wallet;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -36,7 +36,7 @@ class InvestmentResource extends JsonResource
 
     public function customerHasWallet(){
         $customer = Customer::where('user_id', auth()->user()->id)->first();
-        return CustomerWallet::where('customer_id', $customer?->id)->first();
+        return Wallet::where('customer_id', $customer?->id)->first();
     }
 
     public function hasDigitalWallet(){

@@ -30,7 +30,9 @@ class Customer extends Model implements HasMedia
         return $this->hasOne(Media::class, 'model_id', 'id')->where('collection_name', MediaCollectionType::RESIDENTIAL_CARD)->latest()->first();
     }
 
-    public function customerWallet(){
-        return $this->hasOne(CustomerWallet::class, 'customer_id', 'id');
+    public function wallet()
+    {
+        return $this->morphOne(Wallet::class, 'walletable');
     }
+
 }

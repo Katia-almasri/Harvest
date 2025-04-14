@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin\BlockChain;
 
 use App\Enums\General\StatusCodeEnum;
 use App\Http\Controllers\General\ApiController;
+use App\Http\Requests\Contract\ContractPostRequest;
+use App\Http\Requests\Wallet\WalletPostRequest;
 use App\Models\BusinessLogic\SPV;
 use App\Models\Customer\Customer;
 use App\Services\BlockChainInteraction\ContractService;
@@ -15,6 +17,11 @@ class ContractController extends ApiController
 {
     public function __construct(private readonly ContractService $contractService, private readonly CustomerService $customerService)
     {
+    }
+
+    public function store(SPV $spv, ContractPostRequest $request){
+        $contractAddress= $this->contractService->store($spv, $request->all());
+        return $contractAddress;
     }
 
     public function getTokenBalance(SPV $spv, Customer $customer)

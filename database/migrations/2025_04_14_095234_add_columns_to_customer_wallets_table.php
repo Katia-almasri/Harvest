@@ -11,11 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('customer_wallets', function (Blueprint $table) {
-            $table->id();
-            $table->string('wallet_address')->nullable();
-            $table->softDeletes();
-            $table->timestamps();
+        Schema::table('customer_wallets', function (Blueprint $table) {
+            $table->morphs('walletable');
+            $table->string('private_key')->nullable();
         });
     }
 
@@ -24,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('customer_wallets');
+        Schema::table('customer_wallets', function (Blueprint $table) {
+            //
+        });
     }
 };

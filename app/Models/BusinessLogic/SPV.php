@@ -3,6 +3,7 @@
 namespace App\Models\BusinessLogic;
 
 use App\Enums\Media\MediaCollectionType;
+use App\Models\Customer\Wallet;
 use App\Models\RealEstate\RealEstate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -27,5 +28,11 @@ class SPV extends Model implements HasMedia
         return $this->morphOne(Media::class, 'model')
             ->where('collection_name', MediaCollectionType::SPV_LEGAL_DOCUMENT);
     }
+
+    public function wallet()
+    {
+        return $this->morphOne(Wallet::class, 'walletable');
+    }
+
 
 }

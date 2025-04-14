@@ -1,9 +1,9 @@
 <?php
 namespace App\Services\BlockChainInteraction;
+use App\Enums\Contract\NonceStatus;
 use App\Models\BusinessLogic\SPV;
-use Elliptic\EC;
+use Exception;
 use Illuminate\Support\Facades\Log;
-use kornrunner\Keccak;
 use Web3\Contract;
 use Web3\Providers\HttpProvider;
 use Web3\RequestManagers\HttpRequestManager;
@@ -16,6 +16,7 @@ class ContractService {
     protected Web3 $web3;
     protected Contract $contract;
     protected string $abi; // represents the web3 platform application ID
+    protected string $bytecode; // represents the smart contract bytecode
     protected $eth; // to access the Ethereum function
 
     public function __construct()
@@ -25,7 +26,57 @@ class ContractService {
         $this->web3 = new Web3($provider);
         $this->eth = $this->web3->eth;
         $this->abi = file_get_contents(resource_path('contracts/RealEstateToken.json'));
+        $this->bytecode = trim(file_get_contents(resource_path('contracts/RealEstateToken.bin')));
 
+    }
+
+    public function store(SPV $spv, array $data)
+    {
+        $this->getContractBySpv($spv);
+        $spvWalletAddress = $spv->wallet->wallet_address;
+        $adminWallet = $data['admin_wallet_address'];
+
+        // Bytecode must be prefixed with "0x"
+        $bytecode = '0x' . $this->bytecode;
+
+        $nonce = null;
+
+        // 1. Get Nonce
+        $this->web3->eth->getTransactionCount($adminWallet, 'pending', function ($err, $transactionCount) use (&$nonce) {
+            if ($err !== null) {
+                throw new \Exception("❌ Failed to get nonce: " . $err->getMessage());
+            }
+            $nonce = Utils::toHex($transactionCount, true);
+        });
+
+
+        // 2. Prepare Deployment Transaction
+        $txParams = [
+            'nonce'    => $nonce,
+            'from'     => $adminWallet,
+            'gas'      => Utils::toHex(3000000, true),
+            'gasPrice' => Utils::toHex(Utils::toWei('5', 'gwei'), true),
+            'data'     => $bytecode,
+            'chainId'  => 11155111 // Sepolia
+        ];
+
+        // 3. Manually Sign the Transaction
+        $transaction = new \Web3p\EthereumTx\Transaction($txParams);
+        $signedTx = '0x' . $transaction->sign($spv->wallet->private_key);
+
+        $txHash = null;
+
+        // 4. Send Raw Transaction
+        $this->web3->eth->sendRawTransaction($signedTx, function ($err, $hash) use (&$txHash) {
+            if ($err !== null) {
+                throw new \Exception("❌ Deployment failed: " . $err->getMessage());
+            }
+            logger()->info("✅ Contract deployment sent! Tx Hash: $hash");
+            $txHash = $hash;
+        });
+
+
+        return $txHash;
     }
 
 
@@ -60,6 +111,10 @@ class ContractService {
 
     public function getContract(){
         return $this->contract;
+    }
+
+    public function getEth(){
+        return $this->eth;
     }
 
     public function getTransactionCount($fromAddress, $toAddress, $contractAddress, $status, $amount, $realEstate, callable $callback)
@@ -116,3 +171,5 @@ class ContractService {
         });
     }
 }
+
+
