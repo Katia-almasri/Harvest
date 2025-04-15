@@ -29,11 +29,10 @@ class ContractController extends ApiController
         try {
             $this->contractService->getContractBySpv($spv);
             $customer = $this->customerService->show($customer);
-
-            if($customer->customerWallet()==null)
+            if($customer->wallet()==null)
                 throw new Exception(__("customer_wallet_not_configured"));
 
-            $result = $this->contractService->callMethod('balanceOf', $customer->customerWallet->wallet_address);
+            $result = $this->contractService->callMethod('balanceOf', $customer->wallet->wallet_address);
             return $this->apiResponse($result[0]->value, StatusCodeEnum::STATUS_OK, __("messages.success"));
         }
         catch (\Exception $e) {

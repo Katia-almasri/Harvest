@@ -3,6 +3,7 @@ namespace App\Services\BlockChainInteraction;
 use App\Enums\Contract\NonceStatus;
 use App\Models\BusinessLogic\SPV;
 use Exception;
+use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
 use Web3\Contract;
 use Web3\Providers\HttpProvider;
@@ -10,6 +11,7 @@ use Web3\RequestManagers\HttpRequestManager;
 use Web3\Utils;
 use Web3\Web3;
 use Web3p\EthereumTx\Transaction;
+use Web3p\EthereumUtil\Util;
 
 
 class ContractService {
@@ -32,61 +34,63 @@ class ContractService {
 
     public function store(SPV $spv, array $data)
     {
-        $this->getContractBySpv($spv);
-        $spvWalletAddress = $spv->wallet->wallet_address;
+        $contract = new Contract($this->web3->provider, $this->abi);
+        $contract->bytecode('0x' . $this->bytecode);
         $adminWallet = $data['admin_wallet_address'];
+        $privateKey = $spv->wallet->private_key;
 
-        // Bytecode must be prefixed with "0x"
-        $bytecode = '0x' . $this->bytecode;
+        $encodedData = $contract->getData(
+            $data['real_estate_name'],    // string name
+            $data['symbol'],              // string symbol
+            100,                          // uint256 initialSupply
+            "0x23678678b7665a96a14dd15798db0e776d140b7a", // address _spvAddress
+            1                             // uint256 _propertyId
+        );
 
+
+        // Step 1: Get nonce
         $nonce = null;
-
-        // 1. Get Nonce
-        $this->web3->eth->getTransactionCount($adminWallet, 'pending', function ($err, $transactionCount) use (&$nonce) {
+        $this->web3->eth->getTransactionCount($adminWallet, 'latest', function ($err, $transactionCount) use (&$nonce) {
             if ($err !== null) {
                 throw new \Exception("❌ Failed to get nonce: " . $err->getMessage());
             }
             $nonce = Utils::toHex($transactionCount, true);
+            logger()->info("Nonce for transaction: " . $transactionCount);
         });
 
-
-        // 2. Prepare Deployment Transaction
+        // Step 3: Prepare transaction parameters
         $txParams = [
             'nonce'    => $nonce,
-            'from'     => $adminWallet,
-            'gas'      => Utils::toHex(3000000, true),
-            'gasPrice' => Utils::toHex(Utils::toWei('5', 'gwei'), true),
-            'data'     => $bytecode,
-            'chainId'  => 11155111 // Sepolia
+            'from'     => "0x23678678b7665a96a14dd15798db0e776d140b7a",
+            'gas'      => Utils::toHex(600000, true), // Increased gas limit
+            'gasPrice' => Utils::toHex(Utils::toWei('10', 'gwei'), true), // Higher gas price
+            'data'     => $encodedData,
+            'chainId'  => 11155111 // Sepolia test network
         ];
 
-        // 3. Manually Sign the Transaction
+        // Step 4: Manually sign the transaction
         $transaction = new \Web3p\EthereumTx\Transaction($txParams);
-        $signedTx = '0x' . $transaction->sign($spv->wallet->private_key);
+        $signedTx = '0x' . $transaction->sign(env('PRIVATE_KEY'));
 
-        $txHash = null;
 
-        // 4. Send Raw Transaction
-        $this->web3->eth->sendRawTransaction($signedTx, function ($err, $hash) use (&$txHash) {
+        // Step 5: Send the signed transaction
+        $this->web3->eth->sendRawTransaction($signedTx, function ($err, $txHash) {
             if ($err !== null) {
+                Log::info("❌ Deployment failed: " . $err->getMessage());
                 throw new \Exception("❌ Deployment failed: " . $err->getMessage());
             }
-            logger()->info("✅ Contract deployment sent! Tx Hash: $hash");
-            $txHash = $hash;
+
+            Log::info("✅ Contract deployment sent! Tx Hash: $txHash");
+
         });
-
-
-        return $txHash;
     }
-
-
     public function getContractBySpv(SPV $spv): Contract
     {
         if($spv->contract_address==null)
             throw new \Exception("SPV contract address is not configured");
 
         $contract = new Contract($this->web3->getProvider(), $this->abi);
-        $contract->at($spv->contract_address);
+        $contract->at("0x69C582c9FaAa34C2E1cF2632Dc8779424c98d101");
         $this->contract = $contract;
 
         return $contract;
