@@ -1,13 +1,15 @@
 <?php
 namespace App\Enums\Contract;
 
-enum NonceStatus: string{
+enum TransactionStatus: string{
     case PENDING = 'pending';
+    case RETRIED = 'retries';
 
     public static function  getAll(): array
     {
         return [
-            NonceStatus::PENDING,
+            TransactionStatus::PENDING,
+            TransactionStatus::RETRIED
         ];
     }
 }

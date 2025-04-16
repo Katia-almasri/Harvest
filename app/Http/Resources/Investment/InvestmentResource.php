@@ -18,7 +18,7 @@ class InvestmentResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $customerWallet = $this->customerHasWallet();
+        $customerWallet = $this->wallet();
         return [
             'id'=>$this->id,
             'real_estate'=> new RealEstateResource($this->realEstate),

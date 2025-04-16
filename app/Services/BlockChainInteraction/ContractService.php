@@ -1,10 +1,13 @@
 <?php
 namespace App\Services\BlockChainInteraction;
 use App\Enums\Contract\NonceStatus;
+use App\Enums\Contract\TransactionStatus;
 use App\Models\BusinessLogic\SPV;
+use Carbon\Carbon;
 use Exception;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
+use phpseclib\Math\BigInteger;
 use Web3\Contract;
 use Web3\Providers\HttpProvider;
 use Web3\RequestManagers\HttpRequestManager;
@@ -21,7 +24,7 @@ class ContractService {
     protected string $bytecode; // represents the smart contract bytecode
     protected $eth; // to access the Ethereum function
 
-    public function __construct()
+    public function __construct(private readonly TransactionManagerService $transactionManagerService)
     {
         $requestManager = new HttpRequestManager(env('INFURA_ENDPOINT'), 20); // 20 seconds timeout
         $provider = new HttpProvider($requestManager);
@@ -37,52 +40,46 @@ class ContractService {
         $contract = new Contract($this->web3->provider, $this->abi);
         $contract->bytecode('0x' . $this->bytecode);
         $adminWallet = $data['admin_wallet_address'];
-        $privateKey = $spv->wallet->private_key;
 
         $encodedData = $contract->getData(
-            $data['real_estate_name'],    // string name
-            $data['symbol'],              // string symbol
-            100,                          // uint256 initialSupply
-            "0x23678678b7665a96a14dd15798db0e776d140b7a", // address _spvAddress
-            1                             // uint256 _propertyId
+            $data['real_estate_name'],
+            $data['symbol'],
+            $data['initial_supply'],
+            $spv->wallet->wallet_address,
+            $spv->realEstate->id
         );
 
 
         // Step 1: Get nonce
-        $nonce = null;
-        $this->web3->eth->getTransactionCount($adminWallet, 'latest', function ($err, $transactionCount) use (&$nonce) {
-            if ($err !== null) {
-                throw new \Exception("❌ Failed to get nonce: " . $err->getMessage());
-            }
-            $nonce = Utils::toHex($transactionCount, true);
-            logger()->info("Nonce for transaction: " . $transactionCount);
-        });
-
+        $nonce = $this->getNonce($adminWallet);
+        Log::info("nonce: ".$nonce);
+        $gasPrice = $this->getGasPrice();
+        $gas = $this->getGasEstimate($adminWallet, $encodedData);
         // Step 3: Prepare transaction parameters
         $txParams = [
             'nonce'    => $nonce,
-            'from'     => "0x23678678b7665a96a14dd15798db0e776d140b7a",
-            'gas'      => Utils::toHex(600000, true), // Increased gas limit
-            'gasPrice' => Utils::toHex(Utils::toWei('10', 'gwei'), true), // Higher gas price
+            'from'     => $adminWallet,
+            'gas'      => $gas,
+            'gasPrice' => $gasPrice,
             'data'     => $encodedData,
-            'chainId'  => 11155111 // Sepolia test network
+            'chainId'  => env('CHAIN_ID')
         ];
 
-        // Step 4: Manually sign the transaction
-        $transaction = new \Web3p\EthereumTx\Transaction($txParams);
-        $signedTx = '0x' . $transaction->sign(env('PRIVATE_KEY'));
-
-
-        // Step 5: Send the signed transaction
-        $this->web3->eth->sendRawTransaction($signedTx, function ($err, $txHash) {
-            if ($err !== null) {
-                Log::info("❌ Deployment failed: " . $err->getMessage());
-                throw new \Exception("❌ Deployment failed: " . $err->getMessage());
-            }
-
-            Log::info("✅ Contract deployment sent! Tx Hash: $txHash");
-
-        });
+        // Step 4: sign the transaction
+        $signedTx = $this->signTransaction($txParams);
+        $txHash = $this->broadcastTransaction($signedTx);
+        $data = [
+            'tx_hash'      => $txHash,
+            'from_address' => $adminWallet,
+            'to_address'   => null,
+            'nonce'        => $nonce,
+            'gas_limit'    => $gas,
+            'gas_price'    => $gasPrice,
+            'payload'      => $encodedData,
+            'status'       =>TransactionStatus::PENDING->value
+            ];
+        $transaction = $this->transactionManagerService->store($data);
+        return $txHash;
     }
     public function getContractBySpv(SPV $spv): Contract
     {
@@ -90,7 +87,7 @@ class ContractService {
             throw new \Exception("SPV contract address is not configured");
 
         $contract = new Contract($this->web3->getProvider(), $this->abi);
-        $contract->at("0x69C582c9FaAa34C2E1cF2632Dc8779424c98d101");
+        $contract->at($spv->wallet->wallet_address);
         $this->contract = $contract;
 
         return $contract;
@@ -121,10 +118,11 @@ class ContractService {
         return $this->eth;
     }
 
-    public function getTransactionCount($fromAddress, $toAddress, $contractAddress, $status, $amount, $realEstate, callable $callback)
+    public function getTransactionCount($walletAddress, $fromAddress, $toAddress, $contractAddress, $status, $amount, $realEstate, callable $callback)
     {
         $this->getContractBySpv($realEstate->spv);
         $this->web3->eth->getTransactionCount($fromAddress, $status, function ($err, $nonce) use (
+            $walletAddress,
             $fromAddress,
             $toAddress,
             $contractAddress,
@@ -137,8 +135,11 @@ class ContractService {
                 return $callback(null, $err); // pass error
             }
 
+
             $transactionCount = $nonce->toString();
             $data = '0x' . $this->contract->getData('transfer', $toAddress, $amount);
+            $gasPrice = $this->getGasPrice();
+            $gas = $this->getGasEstimate($walletAddress, $data);
 
             $txParams = [
                 'nonce' => Utils::toHex($transactionCount, true),
@@ -156,7 +157,7 @@ class ContractService {
             $transaction = new Transaction($txParams);
             $signedTx = '0x' . $transaction->sign(env('PRIVATE_KEY'));
 
-            $this->web3->eth->sendRawTransaction($signedTx, function ($err, $txHash) use ($callback) {
+            $this->web3->eth->sendRawTransaction($signedTx, function ($err, $txHash) use ($callback, $gas, $gasPrice, $transactionCount) {
                 if ($err !== null) {
                     Log::error("Error sending: " . $err->getMessage());
                     return $callback(null, $err);
@@ -170,10 +171,129 @@ class ContractService {
                 return $callback([
                     'transaction_hash' => $transactionHash,
                     'transaction_url'=> $txUrl,
+                    'gas'=> $gas,
+                    'gas_price'=>$gasPrice,
+                    'nonce'=>$transactionCount,
                 ], null);
             });
         });
     }
+
+    public function getGasPrice(): string
+    {
+        $price = null;
+
+        $this->web3->eth->gasPrice(function ($err, $gasPrice) use (&$price) {
+            if ($err !== null) throw new \Exception($err->getMessage());
+            // Add +5 gwei to boost it
+            $price = bcmul((string) $gasPrice->toString(), '1.25'); // bump 25%
+        });
+
+        return Utils::toHex($price, true);
+    }
+
+    public function getGasEstimate(string $wallet, string $data): string
+    {
+        $gas = null;
+
+        $this->web3->eth->estimateGas([
+            'from' => $wallet,
+            'data' => '0x' . $data
+        ], function ($err, $gasEstimate) use (&$gas) {
+            if ($err !== null) {
+                throw new \Exception("⛽️ Gas estimation failed: " . $err->getMessage());
+            }
+
+            // Add buffer (usually 10% or a fixed buffer like +50_000)
+            $buffer = new BigInteger(50000);
+            $buffered = $gasEstimate->add($buffer); // Both are BigInteger now
+            $gas = Utils::toHex($buffered, true);
+        });
+
+        // Wait until callback finishes
+        // Optional: you can handle retry/wait loop here if needed
+        if (!$gas) {
+            throw new \Exception("Failed to get gas estimate.");
+        }
+
+        return $gas;
+    }
+
+    public function getNonce(string $wallet){
+        $nonce = null;
+        $this->web3->eth->getTransactionCount($wallet, NonceStatus::PENDING->value, function ($err, $count) use (&$nonce) {
+            if ($err !== null) throw new \Exception($err->getMessage());
+            $nonce = hexdec($count);
+        });
+
+        return $nonce;
+    }
+
+    public function signTransaction(array $txParams): string
+    {
+        $privateKey = env('PRIVATE_KEY');
+
+        $tx = new Transaction($txParams);
+        $signed = $tx->sign($privateKey);
+
+        return '0x' . $signed;
+    }
+
+    public function broadcastTransaction(string $signedTx): string
+    {
+        $txHash = null;
+        $this->web3->eth->sendRawTransaction($signedTx, function ($err, $result) use (&$txHash) {
+            if ($err !== null) {
+                throw new \Exception("🚨 Broadcast failed: " . $err->getMessage());
+            }
+
+            $txHash = $result;
+        });
+
+        if (!$txHash) {
+            throw new \Exception("Transaction broadcast failed.");
+        }
+
+        return $txHash;
+    }
+
+    public function retryTransaction(\App\Models\Transaction $transaction): string
+    {
+
+        // 1. Bump the gas price
+        $oldGasPrice = hexdec($transaction->gas_price);
+        Log::info("old price".$oldGasPrice);
+        $newGasPrice = (int) ($oldGasPrice * 1.2); // +20%
+
+        // 2. Set gas limit (or use estimateGas if needed)
+
+        // 3. Prepare the transaction payload
+        $txParams = [
+            'nonce'     => $transaction->nonce,
+            'from'      => $transaction->from_address,
+            'to'        => $transaction->to_address,
+            'gas'       => $transaction->gas_limit, true,
+            'gasPrice'  => Utils::toHex($newGasPrice, true),
+            'data'      => $transaction->payload,
+            'value'     => '0x0',
+            'chainId'   => env('CHAIN_ID'), // Optional, set in .env
+        ];
+
+        // 4. Sign and broadcast
+        $signedTx = $this->signTransaction($txParams);
+        $txHash = $this->broadcastTransaction($signedTx);
+        // update the transaction status
+        $this->transactionManagerService->update($transaction, [
+            'retries'=>$transaction->retries+1,
+            'status'=> TransactionStatus::RETRIED
+        ]);
+        // 5. Done!
+        Log::info("✅ Retried tx sent: $txHash");
+
+        return $txHash;
+    }
+
+
 }
 
 

@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Customer\BlockChain;
 
 use App\Enums\Contract\NonceStatus;
+use App\Enums\Contract\TransactionStatus;
 use App\Enums\General\StatusCodeEnum;
 use App\Http\Controllers\General\ApiController;
 use App\Http\Requests\Tokens\PostTokensRequest;
 use App\Http\Resources\RealEstate\RealEstateResource;
+use App\Jobs\StoreTransactionRecord;
 use App\Models\BusinessLogic\SPV;
 use App\Models\Customer\Customer;
 use App\Models\RealEstate\RealEstate;
@@ -48,7 +50,7 @@ class ContractController extends ApiController
 
             $customer = $this->customerService->showByUser(auth()->user());
             // the customer wallet
-            $toAddress = $customer->customerWallet->wallet_address;
+            $toAddress = $customer->wallet->wallet_address;
             // the related contract address spv
             $spv = $realEstate->spv;
             $fromAddress = $spv->wallet_address;
@@ -56,7 +58,7 @@ class ContractController extends ApiController
 
             $transactionHash = null;
             $transactionUrl = null;
-            $this->contractService->getTransactionCount($fromAddress, $toAddress, $contractAddress, NonceStatus::Pending, $request->amount, $realEstate, function ($data, $err) use(&$transactionHash, &$transactionUrl){
+            $this->contractService->getTransactionCount($spv->wallet->wallet_address, $fromAddress, $toAddress, $contractAddress, NonceStatus::PENDING->value, $request->amount, $realEstate, function ($data, $err) use(&$transactionHash, &$transactionUrl, $fromAddress, $toAddress){
                 if ($err) {
                     // Handle the error
                     Log::error("Transaction failed: " . $err->getMessage());
@@ -64,8 +66,24 @@ class ContractController extends ApiController
                     // Success!
                     $transactionHash = $data['transaction_hash'];
                     $transactionUrl = $data['transaction_url'];
+
+                    // save the transaction into the DB
+                    $data = [
+                        'tx_hash'      => $transactionHash,
+                        'from_address' => $fromAddress,
+                        'to_address'   => $toAddress,
+                        'nonce'        => $data['nonce'],
+                        'gas_limit'    => $data['gas'],
+                        'gas_price'    => $data['gas_price'],
+                        'payload'      => null,
+                        'status'       =>TransactionStatus::PENDING->value
+                    ];
+                    StoreTransactionRecord::dispatch($data);
+
                 }
             });
+
+
 
             $returnedResource = [
                 'transaction_hash'=> $transactionHash,
