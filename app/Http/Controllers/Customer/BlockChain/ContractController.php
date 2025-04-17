@@ -34,7 +34,6 @@ class ContractController extends ApiController
             $customer = Customer::where('user_id', auth()->user()->id)->first();
             if($customer->wallet()==null)
                 throw new Exception(__("customer_wallet_not_configured"));
-
             $result = $this->contractService->callMethod('balanceOf', $customer->wallet->wallet_address);
             return $this->apiResponse((string)$result[0]->value, StatusCodeEnum::STATUS_OK, __("messages.success"));
         }
@@ -47,7 +46,6 @@ class ContractController extends ApiController
     public function mintTokens(PostTokensRequest $request, RealEstate $realEstate)
     {
         try {
-
             $customer = $this->customerService->showByUser(auth()->user());
             // the customer wallet
             $toAddress = $customer->wallet->wallet_address;
@@ -55,10 +53,9 @@ class ContractController extends ApiController
             $spv = $realEstate->spv;
             $fromAddress = $spv->wallet_address;
             $contractAddress = $spv->contract_address;
-
             $transactionHash = null;
             $transactionUrl = null;
-            $this->contractService->getTransactionCount($spv->wallet->wallet_address, $fromAddress, $toAddress, $contractAddress, NonceStatus::PENDING->value, $request->amount, $realEstate, function ($data, $err) use(&$transactionHash, &$transactionUrl, $fromAddress, $toAddress){
+            $this->contractService->getTransactionCount($fromAddress, $toAddress, $contractAddress, 'latest', $request->amount, $realEstate, function ($data, $err) use(&$transactionHash, &$transactionUrl, $fromAddress, $toAddress){
                 if ($err) {
                     // Handle the error
                     Log::error("Transaction failed: " . $err->getMessage());
@@ -82,8 +79,6 @@ class ContractController extends ApiController
 
                 }
             });
-
-
 
             $returnedResource = [
                 'transaction_hash'=> $transactionHash,

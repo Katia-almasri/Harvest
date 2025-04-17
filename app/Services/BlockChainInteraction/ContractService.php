@@ -44,24 +44,34 @@ class ContractService {
         $encodedData = $contract->getData(
             $data['real_estate_name'],
             $data['symbol'],
-            $data['initial_supply'],
+            (int)$data['initial_supply'],
             $spv->wallet->wallet_address,
-            $spv->realEstate->id
+            (int)$spv->realEstate->id
         );
+        $data = '0x' . $this->bytecode . substr($encodedData, 2);
 
-
+        $nonce = null;
         // Step 1: Get nonce
-        $nonce = $this->getNonce($adminWallet);
-        Log::info("nonce: ".$nonce);
+        $this->getNonce($adminWallet, function ($result, $err) use(&$nonce){
+            if ($err !== null) {
+                Log::error("❌ Nonce fetch failed: " . $err->getMessage());
+                return;
+            }
+
+            Log::info("✅ Correct nonce is: " . $result);
+            $nonce = $result;
+            // Now you can continue your logic here using $nonce
+        });
         $gasPrice = $this->getGasPrice();
-        $gas = $this->getGasEstimate($adminWallet, $encodedData);
+        $gas = $this->getGasEstimate($adminWallet, null, $encodedData);
+        Log::info("gas: ".$gas);
         // Step 3: Prepare transaction parameters
         $txParams = [
-            'nonce'    => $nonce,
+            'nonce'    => Utils::toHex($nonce, true),
             'from'     => $adminWallet,
-            'gas'      => $gas,
+            'gas'      => '0x100000',
             'gasPrice' => $gasPrice,
-            'data'     => $encodedData,
+            'data'     => $data,
             'chainId'  => env('CHAIN_ID')
         ];
 
@@ -87,7 +97,7 @@ class ContractService {
             throw new \Exception("SPV contract address is not configured");
 
         $contract = new Contract($this->web3->getProvider(), $this->abi);
-        $contract->at($spv->wallet->wallet_address);
+        $contract->at($spv->contract_address);
         $this->contract = $contract;
 
         return $contract;
@@ -118,11 +128,10 @@ class ContractService {
         return $this->eth;
     }
 
-    public function getTransactionCount($walletAddress, $fromAddress, $toAddress, $contractAddress, $status, $amount, $realEstate, callable $callback)
+    public function getTransactionCount($fromAddress, $toAddress, $contractAddress, $status, $amount, $realEstate, callable $callback)
     {
         $this->getContractBySpv($realEstate->spv);
         $this->web3->eth->getTransactionCount($fromAddress, $status, function ($err, $nonce) use (
-            $walletAddress,
             $fromAddress,
             $toAddress,
             $contractAddress,
@@ -135,21 +144,31 @@ class ContractService {
                 return $callback(null, $err); // pass error
             }
 
+            $this->getNonce($fromAddress,  function ($nonce, $err) {
+                if ($err !== null) {
+                    Log::error("❌ Nonce fetch failed: " . $err->getMessage());
+                    return;
+                }
 
-            $transactionCount = $nonce->toString();
-            $data = '0x' . $this->contract->getData('transfer', $toAddress, $amount);
+                Log::info("✅ Correct nonce is: " . $nonce);
+
+                // Now you can continue your logic here using $nonce
+            });
+            Log::info("origingal nonce: ".$nonce);
+            $data = $this->contract->getData('transfer', $toAddress, $amount);
+            $encodedData = '0x'.$data;
             $gasPrice = $this->getGasPrice();
-            $gas = $this->getGasEstimate($walletAddress, $data);
+            $gas = $this->getGasEstimate($fromAddress, $contractAddress, $data);
 
             $txParams = [
-                'nonce' => Utils::toHex($transactionCount, true),
+                'nonce' => Utils::toHex($nonce, true),
                 'from' => $fromAddress,
                 'to' => $contractAddress,
-                'gas' => Utils::toHex(env('GAS'), true),
-                'gasPrice' => Utils::toHex(Utils::toWei(env('GAS_PRICE'), 'gwei'), true),
+                'gas' => $gas,
+                'gasPrice' => $gasPrice,
                 'value' => '0x0',
                 'chainId' => env('CHAIN_ID'),
-                'data' => $data,
+                'data' => $encodedData,
             ];
 
             Log::info("txParams: " . json_encode($txParams));
@@ -157,7 +176,7 @@ class ContractService {
             $transaction = new Transaction($txParams);
             $signedTx = '0x' . $transaction->sign(env('PRIVATE_KEY'));
 
-            $this->web3->eth->sendRawTransaction($signedTx, function ($err, $txHash) use ($callback, $gas, $gasPrice, $transactionCount) {
+            $this->web3->eth->sendRawTransaction($signedTx, function ($err, $txHash) use ($callback, $gas, $gasPrice, $nonce) {
                 if ($err !== null) {
                     Log::error("Error sending: " . $err->getMessage());
                     return $callback(null, $err);
@@ -173,7 +192,7 @@ class ContractService {
                     'transaction_url'=> $txUrl,
                     'gas'=> $gas,
                     'gas_price'=>$gasPrice,
-                    'nonce'=>$transactionCount,
+                    'nonce'=>$nonce,
                 ], null);
             });
         });
@@ -192,26 +211,28 @@ class ContractService {
         return Utils::toHex($price, true);
     }
 
-    public function getGasEstimate(string $wallet, string $data): string
+    public function getGasEstimate(string $fromAddress, $toAddress, string $data): string
     {
         $gas = null;
 
         $this->web3->eth->estimateGas([
-            'from' => $wallet,
+            'from' => $fromAddress,
+            'to'   => $toAddress,
             'data' => '0x' . $data
         ], function ($err, $gasEstimate) use (&$gas) {
             if ($err !== null) {
                 throw new \Exception("⛽️ Gas estimation failed: " . $err->getMessage());
             }
 
-            // Add buffer (usually 10% or a fixed buffer like +50_000)
-            $buffer = new BigInteger(50000);
-            $buffered = $gasEstimate->add($buffer); // Both are BigInteger now
-            $gas = Utils::toHex($buffered, true);
+//            $buffer = new BigInteger(50000);
+//            $buffered = $gasEstimate->add($buffer);
+//
+//            Log::info("⛽️ Raw gas estimate: " . $gasEstimate->toString());
+//            Log::info("⛽️ Buffered gas: " . $buffered->toString());
+
+            $gas = $gasEstimate;
         });
 
-        // Wait until callback finishes
-        // Optional: you can handle retry/wait loop here if needed
         if (!$gas) {
             throw new \Exception("Failed to get gas estimate.");
         }
@@ -219,15 +240,17 @@ class ContractService {
         return $gas;
     }
 
-    public function getNonce(string $wallet){
-        $nonce = null;
-        $this->web3->eth->getTransactionCount($wallet, NonceStatus::PENDING->value, function ($err, $count) use (&$nonce) {
-            if ($err !== null) throw new \Exception($err->getMessage());
-            $nonce = hexdec($count);
-        });
+    public function getNonce(string $wallet, callable $callback)
+    {
+        $this->web3->eth->getTransactionCount($wallet, 'latest', function ($err, $count) use ($callback) {
+            if ($err !== null) {
+                return $callback(null, $err);
+            }
 
-        return $nonce;
+            return $callback($count, null);
+        });
     }
+
 
     public function signTransaction(array $txParams): string
     {
