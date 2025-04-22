@@ -40,7 +40,6 @@ class ContractService {
         $contract = new Contract($this->web3->provider, $this->abi);
         $contract->bytecode('0x' . $this->bytecode);
         $adminWallet = $data['admin_wallet_address'];
-
         $encodedData = $contract->getData(
             $data['real_estate_name'],
             $data['symbol'],
@@ -48,8 +47,7 @@ class ContractService {
             $spv->wallet->wallet_address,
             (int)$spv->realEstate->id
         );
-        $data = '0x' . $this->bytecode . substr($encodedData, 2);
-
+        $dataPayload = '0x'. $encodedData;
         $nonce = null;
         // Step 1: Get nonce
         $this->getNonce($adminWallet, function ($result, $err) use(&$nonce){
@@ -62,21 +60,24 @@ class ContractService {
             $nonce = $result;
             // Now you can continue your logic here using $nonce
         });
+
         $gasPrice = $this->getGasPrice();
         $gas = $this->getGasEstimate($adminWallet, null, $encodedData);
-        Log::info("gas: ".$gas);
+
         // Step 3: Prepare transaction parameters
         $txParams = [
             'nonce'    => Utils::toHex($nonce, true),
             'from'     => $adminWallet,
-            'gas'      => '0x100000',
+            'gas'      => Utils::toHex($gas, true),
             'gasPrice' => $gasPrice,
-            'data'     => $data,
+            'data'     => $dataPayload,
             'chainId'  => env('CHAIN_ID')
         ];
 
+
         // Step 4: sign the transaction
         $signedTx = $this->signTransaction($txParams);
+
         $txHash = $this->broadcastTransaction($signedTx);
         $data = [
             'tx_hash'      => $txHash,
@@ -87,7 +88,7 @@ class ContractService {
             'gas_price'    => $gasPrice,
             'payload'      => $encodedData,
             'status'       =>TransactionStatus::PENDING->value
-            ];
+        ];
         $transaction = $this->transactionManagerService->store($data);
         return $txHash;
     }
@@ -214,11 +215,10 @@ class ContractService {
     public function getGasEstimate(string $fromAddress, $toAddress, string $data): string
     {
         $gas = null;
-
         $this->web3->eth->estimateGas([
             'from' => $fromAddress,
             'to'   => $toAddress,
-            'data' => '0x' . $data
+            'data' => '0x' . $data,
         ], function ($err, $gasEstimate) use (&$gas) {
             if ($err !== null) {
                 throw new \Exception("⛽️ Gas estimation failed: " . $err->getMessage());
@@ -239,7 +239,6 @@ class ContractService {
 
         return $gas;
     }
-
     public function getNonce(string $wallet, callable $callback)
     {
         $this->web3->eth->getTransactionCount($wallet, 'latest', function ($err, $count) use ($callback) {
@@ -265,15 +264,23 @@ class ContractService {
     public function broadcastTransaction(string $signedTx): string
     {
         $txHash = null;
+
+        // Adding logging to check the transaction
+        Log::info("Attempting to broadcast transaction: " . $signedTx);
+
         $this->web3->eth->sendRawTransaction($signedTx, function ($err, $result) use (&$txHash) {
             if ($err !== null) {
+                Log::error("🚨 Broadcast failed: " . $err->getMessage());
                 throw new \Exception("🚨 Broadcast failed: " . $err->getMessage());
             }
 
+            Log::info("Transaction successfully broadcasted. Result: " . $result);
             $txHash = $result;
         });
 
+        // If txHash is still null, throw an error indicating the transaction wasn't broadcasted
         if (!$txHash) {
+            Log::error("Transaction broadcast failed. No transaction hash returned.");
             throw new \Exception("Transaction broadcast failed.");
         }
 

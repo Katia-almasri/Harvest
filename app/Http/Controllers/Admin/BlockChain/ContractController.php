@@ -17,6 +17,7 @@ class ContractController extends ApiController
 {
     public function __construct(private readonly ContractService $contractService, private readonly CustomerService $customerService)
     {
+
     }
 
     public function store(SPV $spv, ContractPostRequest $request){
