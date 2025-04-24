@@ -48,7 +48,7 @@ class ProcessSuccessfulInvestment implements ShouldQueue
         //3. update the real estate requirements
         $realEstate = RealEstate::find($this->realEstateId);
         $realEstate->update([
-            'shares_sold'=> $investment->total_tokens,
+            'shares_sold'=> $realEstate->shares_sold + $investment->total_tokens,
         ]);
 
 

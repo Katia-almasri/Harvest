@@ -7,6 +7,7 @@ enum RealEstateStatus
     const ACTIVE = 'active';
     const INACTIVE = 'inactive';
     const CLOSED = 'closed';
+    const PENDING = 'pending'; // this mean it is waiting for some customers to complete payment for example
     const SOLD = 'sold';
 
 
@@ -16,6 +17,7 @@ enum RealEstateStatus
             RealEstateStatus::ACTIVE,
             RealEstateStatus::INACTIVE,
             RealEstateStatus::CLOSED,
+            RealEstateStatus::PENDING,
             RealEstateStatus::SOLD,
         ];
     }

@@ -92,6 +92,7 @@ class PaymentController extends ApiController
             if ($payment->status === PaymentStatus::SUCCEEDED) {
                 // ✅ Update investment
                 $this->investmentService->update(['status' => InvestmentStatus::PENDING_PAYMENT], $investment);
+                // Update the RealEstate sharesSold
             }
 
             DB::commit();

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Payment\Payable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,5 +21,10 @@ class Payment extends Model
     public function payable(): BelongsTo
     {
         return $this->morphTo();
+    }
+
+    ####################### custom functions ###############
+    public static function realEstates(){
+        return self::where('payable_type', Payable::REALESTATE);
     }
 }
