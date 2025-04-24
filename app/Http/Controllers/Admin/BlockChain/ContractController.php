@@ -22,19 +22,18 @@ class ContractController extends ApiController
 
     public function store(SPV $spv, ContractPostRequest $request){
         $contractAddress= $this->contractService->store($spv, $request->all());
-        return $contractAddress;
+        return $this->apiResponse($contractAddress, StatusCodeEnum::STATUS_OK, __("messages.success"));
     }
 
     public function getTokenBalance(SPV $spv, Customer $customer)
     {
         try {
-            $this->contractService->getContractBySpv($spv);
             $customer = $this->customerService->show($customer);
             if($customer->wallet()==null)
                 throw new Exception(__("customer_wallet_not_configured"));
 
-            $result = $this->contractService->callMethod('balanceOf', $customer->wallet->wallet_address);
-            return $this->apiResponse($result[0]->value, StatusCodeEnum::STATUS_OK, __("messages.success"));
+            $result = $this->contractService->balanceOf($customer->wallet->wallet_address, $spv);
+            return $this->apiResponse((string)$result[0]->value, StatusCodeEnum::STATUS_OK, __("messages.success"));
         }
         catch (\Exception $e) {
             return $this->apiResponse(null, StatusCodeEnum::INTERNAL_SERVER_ERROR, __($e->getMessage()));

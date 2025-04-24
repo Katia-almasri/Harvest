@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Customer\BlockChain;
 
-use App\Enums\Contract\NonceStatus;
 use App\Enums\Contract\TransactionStatus;
 use App\Enums\General\StatusCodeEnum;
 use App\Http\Controllers\General\ApiController;
@@ -13,28 +12,33 @@ use App\Models\BusinessLogic\SPV;
 use App\Models\Customer\Customer;
 use App\Models\RealEstate\RealEstate;
 use App\Services\BlockChainInteraction\ContractService;
+use App\Services\BlockChainInteraction\TransactionManagerService;
+use App\Services\BlockChainInteraction\WalletService;
+use App\Services\BlockChainInteraction\Web3TransactionService;
 use App\Services\Customer\CustomerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Mockery\Exception;
+use Symfony\Contracts\Service\Attribute\SubscribedService;
 use Web3\Utils;
 use Web3p\EthereumTx\Transaction;
 
 class ContractController extends ApiController
 {
-    public function __construct(private readonly ContractService $contractService,
+    private ContractService $contractService;
+    public function __construct(
     private readonly CustomerService $customerService)
     {
+        $this->contractService = new ContractService(new TransactionManagerService(), new Web3TransactionService(new WalletService()));
     }
 
     public function getTokenBalance(SPV $spv)
     {
         try {
-            $this->contractService->getContractBySpv($spv);
             $customer = Customer::where('user_id', auth()->user()->id)->first();
             if($customer->wallet()==null)
                 throw new Exception(__("customer_wallet_not_configured"));
-            $result = $this->contractService->callMethod('balanceOf', $customer->wallet->wallet_address);
+            $result = $this->contractService->balanceOf($customer->wallet->wallet_address, $spv);
             return $this->apiResponse((string)$result[0]->value, StatusCodeEnum::STATUS_OK, __("messages.success"));
         }
         catch (\Exception $e) {
@@ -53,42 +57,7 @@ class ContractController extends ApiController
             $spv = $realEstate->spv;
             $fromAddress = $spv->wallet_address;
             $contractAddress = $spv->contract_address;
-            $transactionHash = null;
-            $transactionUrl = null;
-            $this->contractService->getTransactionCount($fromAddress, $toAddress, $contractAddress, 'latest', $request->amount, $realEstate, function ($data, $err) use(&$transactionHash, &$transactionUrl, $fromAddress, $toAddress){
-                if ($err) {
-                    // Handle the error
-                    Log::error("Transaction failed: " . $err->getMessage());
-                } else {
-                    // Success!
-                    $transactionHash = $data['transaction_hash'];
-                    $transactionUrl = $data['transaction_url'];
-
-                    // save the transaction into the DB
-                    $data = [
-                        'tx_hash'      => $transactionHash,
-                        'from_address' => $fromAddress,
-                        'to_address'   => $toAddress,
-                        'nonce'        => $data['nonce'],
-                        'gas_limit'    => $data['gas'],
-                        'gas_price'    => $data['gas_price'],
-                        'payload'      => null,
-                        'status'       =>TransactionStatus::PENDING->value
-                    ];
-                    StoreTransactionRecord::dispatch($data);
-
-                }
-            });
-
-            $returnedResource = [
-                'transaction_hash'=> $transactionHash,
-                'transaction_path' => $transactionUrl,
-                'real_estate'=> new RealEstateResource($realEstate),
-                'tokens'=> $request->amount,
-                'wallet_address' => $fromAddress,
-                'contract_address' => $contractAddress,
-            ];
-
+            $returnedResource = $this->contractService->transferTokens($fromAddress, $toAddress, $contractAddress, TransactionStatus::LATEST->value, $request->amount, $realEstate);
             return $this->apiResponse($returnedResource, StatusCodeEnum::STATUS_OK, __("messages.success"));
         }catch (\Exception $exception){
             Log::error($exception->getMessage());

@@ -1,0 +1,33 @@
+image: docker:latest
+
+services:
+  - docker:dind
+
+stages:
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+
+before_script:
+  - apk add --no-cache curl bash
+  - curl -fsSL https://railway.app/install.sh | sh
+  - railway login --apiKey $RAILWAY_API_KEY
+
+deploy-mysql:
+  stage: deploy
+  script:
+    - cd mysql
+    - railway up --service mysql
+
+deploy-redis:
+  stage: deploy
+  script:
+    - cd redis
+    - railway up --service redis
+
+deploy-app:
+  stage: deploy
+  script:
+    - cd app
+    - railway up --service laravel-app

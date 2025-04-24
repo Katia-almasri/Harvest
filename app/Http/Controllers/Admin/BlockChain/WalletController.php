@@ -3,35 +3,50 @@
 namespace App\Http\Controllers\Admin\BlockChain;
 
 use App\Enums\General\StatusCodeEnum;
+use App\Enums\Wallet\WalletableType;
 use App\Helpers\KeyHelper;
 use App\Http\Controllers\General\ApiController;
-use App\Http\Requests\Wallet\SpvWalletPostRequest;
 use App\Http\Resources\Wallet\WalletResource;
 use App\Models\BusinessLogic\SPV;
-use App\Services\BlockChainInteraction\ContractService;
+use App\Models\Customer\Wallet;
 use App\Services\BlockChainInteraction\WalletService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use kornrunner\Keccak;
-use Web3\Utils;
-use Web3p\EthereumTx\Transaction;
+
 
 class WalletController extends ApiController
 {
 
-    public function __construct(private readonly WalletService $walletService,
-                                private readonly ContractService $contractService
-    )
+    public function __construct(private readonly WalletService $walletService)
     {
     }
 
     /**
-     * Display a listing of the resource.
+     * Display a listing of admin Wallets they have (Admin wallets only).
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $adminWallets = Wallet::forAdmins();
+
+        if($request->search){
+            $adminWallets = $adminWallets->where('wallet_address', 'like', '%'.$request->search.'%');
+        }
+        if($request->newest){
+            $adminWallets = $adminWallets->orderBy('created_at','DESC');
+        }
+
+        $adminWallets = $adminWallets->where('walletable_id', auth()->user()->id);
+
+        if($request->order){
+            $adminWallets = $adminWallets->orderBy('created_at', $request->order)->paginate($request->per_page ?? env('PAGINATE'));
+        }
+        else if (!$request->order)
+            $adminWallets = $adminWallets->orderByDesc('created_at')->paginate($request->per_page ?? env('PAGINATE'));
+
+        $paginate_info = $this->formatPaginateData($adminWallets);
+        return $this->apiResponse(WalletResource::collection($adminWallets), StatusCodeEnum::STATUS_OK, null , $paginate_info);
+
     }
 
     /**
@@ -43,7 +58,7 @@ class WalletController extends ApiController
             DB::beginTransaction();
             $keys = KeyHelper::generateWalletKeys();
             //save this info in the database
-            $spvWallet = $this->walletService->store(['private_key'=> $keys['private_key'],
+            $spvWallet = $this->walletService->store(['private_key'=> Crypt::encryptString($keys['private_key']),
                 'wallet_address' => $keys['public_address'],], $spv);
             DB::commit();
             return $this->apiResponse(new WalletResource($spvWallet), StatusCodeEnum::STATUS_OK, __('messages.success'));

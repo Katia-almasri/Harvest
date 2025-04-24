@@ -14,6 +14,10 @@ class WalletService{
     }
 
     public function show(){}
+
+    public function showByWalletAddress($walletAddress){
+        return Wallet::where('wallet_address', 'like', $walletAddress)->first();
+    }
     public function update(){}
     public function destroy(){}
 }

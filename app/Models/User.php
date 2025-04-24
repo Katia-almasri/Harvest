@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Media\MediaCollectionType;
+use App\Models\Customer\Wallet;
 use App\Models\General\OTP;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -60,5 +61,10 @@ class User extends Authenticatable implements HasMedia
 
     public function image(){
         return $this->hasOne(Media::class, 'model_id', 'id')->where('collection_name', MediaCollectionType::PROFILE_IMAGE)->latest()->first();
+    }
+
+    public function wallet()
+    {
+        return $this->morphOne(Wallet::class, 'walletable');
     }
 }

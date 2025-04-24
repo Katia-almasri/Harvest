@@ -8,7 +8,6 @@ class TransactionManagerService
 {
     public function store(array $data){
         $transaction = new Transaction();
-        Log::info("gas: ".$data['gas_limit']);
         $transaction->create($data);
         return $transaction;
     }
