@@ -87,7 +87,7 @@ A code walkthrough or demo access can be provided upon request.
 **Katia Almasri**  
 Backend Developer – Laravel | Payments | SaaS Platforms  
 📧 katiaalmasri2@gmail.com  
-🌐 [GitHub](https://github.com/Katia-almasri) | [LinkedIn](https://linkedin.com/in/katia-al-masri)
+🌐 [GitHub](https://github.com/Katia-almasri) | [LinkedIn](https://www.linkedin.com/in/katia-al-masri-5884821b8/)
 
 ---
 
