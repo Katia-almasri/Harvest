@@ -30,6 +30,7 @@ It also features a secure internal transaction mechanism to handle rent distribu
 ---
 
 ## 📂 Project Structure (Simplified)
+```bash
 harvest/
 │
 ├── app/
@@ -51,7 +52,7 @@ harvest/
 └── config/
 
 ---
-
+```
 ---
 
 ## 🧠 Key Logic – Ownership Ledger
