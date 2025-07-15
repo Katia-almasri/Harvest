@@ -30,4 +30,69 @@ It also features a secure internal transaction mechanism to handle rent distribu
 ---
 
 ## 📂 Project Structure (Simplified)
+harvest/
+│
+├── app/
+│ ├── Models/
+│ ├── Http/Controllers/
+│ ├── Jobs/
+│ ├── Events/
+│ ├── Listeners/
+│ └── Services/
+│
+├── routes/
+│ └── web.php
+│
+├── database/
+│ ├── migrations/
+│ ├── seeders/
+│ └── factories/
+│
+└── config/
+
+---
+
+---
+
+## 🧠 Key Logic – Ownership Ledger
+
+The system keeps a live ledger that maps each user's ownership percentage of a property.
+
+When rent income is received:
+1. A `RentDistributionJob` is triggered.
+2. The job calculates each owner's share.
+3. Internal `Transaction` records are created.
+4. Balances are updated accordingly.
+
+---
+
+## 🧪 Example Use Cases
+
+- Add a new property and assign owners with different share percentages.
+- Receive rent income and distribute it automatically.
+- Transfer ownership from one investor to another.
+- Audit rental history per user.
+
+---
+
+## 🚀 Demo / Deployment
+
+This project is not publicly deployed for security reasons.  
+A code walkthrough or demo access can be provided upon request.
+
+---
+
+## 📫 Author
+
+**Katia Almasri**  
+Backend Developer – Laravel | Payments | SaaS Platforms  
+📧 katiaalmasri2@gmail.com  
+🌐 [GitHub](https://github.com/Katia-almasri) | [LinkedIn](https://linkedin.com/in/katia-al-masri)
+
+---
+
+## 📝 License
+
+MIT – Open-source for learning and personal use.
+
 
